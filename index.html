@@ -20,7 +20,7 @@
             مصنع <span class="gradient-text">المنتجات الرقمية الذكية</span>
         </h1>
         <p class="text-slate-400 max-w-xl mx-auto text-sm md:text-base">
-            اكتب وصف طلبك (Prompt) وسيقوم الذكاء الاصطناعي بتوليده وتجهيزه لك أوتوماتيكياً فور إتمام الدفع.
+            اكتب وصف طلبك (Prompt) وسيقوم الذكاء الاصطناعي بتوليده وتجهيزه لك أوتوماتيكياً في ثوانٍ معدودة.
         </p>
     </header>
 
@@ -31,9 +31,9 @@
             <!-- نوع المنتج -->
             <label class="block text-slate-400 text-xs font-bold mb-2">1. اختر نوع المنتج الرقمي:</label>
             <select id="productType" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white mb-4 focus:outline-none focus:border-emerald-500 text-sm">
-                <option value="e-book">📚 كتاب إلكتروني مصغر (PDF / دليل)</option>
-                <option value="logo">🎨 تصميم شعار وتصاميم إبداعية</option>
-                <option value="ad-copy">📢 إعلان تسويقي / سيناريو تيك توك</option>
+                <option value="كتاب إلكتروني مصغر (PDF / دليل)">📚 كتاب إلكتروني مصغر (PDF / دليل)</option>
+                <option value="تصميم شعار ومحتوى إبداعي">🎨 تصميم شعار وأفكار إبداعية</option>
+                <option value="إعلان تسويقي / سيناريو تيك توك">📢 إعلان تسويقي / سيناريو تيك توك</option>
             </select>
 
             <!-- صندوق الـ Prompt -->
@@ -48,14 +48,14 @@
 
             <!-- زر التوليد والدفع -->
             <button onclick="generateProduct()" class="w-full gold-gradient text-slate-950 font-black py-3.5 rounded-xl text-base hover:opacity-90 transition shadow-lg">
-                ⚡ توليد المنتج أوتوماتيكياً (1 USDT)
+                ⚡ توليد المنتج أوتوماتيكياً
             </button>
 
             <!-- منطقة النتيجة أو التحميل -->
             <div id="resultArea" class="mt-6 hidden bg-slate-950 p-4 rounded-xl border border-emerald-500/40 text-center">
                 <p class="text-xs text-emerald-400 font-bold mb-2">تم توليد منتجك بنجاح! 🎉</p>
                 <div id="outputContent" class="text-xs text-slate-300 max-h-40 overflow-y-auto mb-3 text-right bg-slate-900 p-3 rounded-lg"></div>
-                <a id="downloadBtn" href="#" class="inline-block bg-emerald-500 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs">تحميل الملف (PDF / نص)</a>
+                <a id="downloadBtn" href="#" class="inline-block bg-emerald-500 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs">تحميل الملف (TXT)</a>
             </div>
         </div>
     </main>
@@ -66,6 +66,8 @@
     </footer>
 
     <script>
+        // ضع مفتاح Gemini الخاص بك هنا بين القوسين
+        const GEMINI_API_KEY = "ضع_مفتاح_جيمني_هنا"; 
         const MY_WALLET = "TYnJW395RFhCnpowLBtEiHWys88tg5FeiU";
 
         async function generateProduct() {
@@ -77,39 +79,47 @@
                 return;
             }
 
-            // مؤشر التحميل
+            if(GEMINI_API_KEY === "ضع_مفتاح_جيمني_هنا") {
+                alert("الرجاء إضافة مفتاح Gemini API الخاص بك داخل كود الصفحة أولاً!");
+                return;
+            }
+
             const btn = document.querySelector('button');
             btn.innerText = "جاري التوليد بواسطة الذكاء الاصطناعي... ⏳";
             btn.disabled = true;
 
             try {
-                // إرسال الطلب إلى مسار الـ Serverless Function على Vercel (الذي سيحتوي على مفتاح OpenAI API بأمان)
-                const response = await fetch('/api/generate', {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type, prompt: promptText })
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: `قم بتوليد محتوى احترافي لـ (${type}) بناءً على الوصف التالي: ${promptText}` }]
+                        }]
+                    })
                 });
 
                 const data = await response.json();
 
-                if(response.ok) {
-                    document.getElementById('resultArea').classList.remove('hidden');
-                    document.getElementById('outputContent').innerText = data.result;
+                if(response.ok && data.candidates && data.candidates[0].content) {
+                    const resultText = data.candidates[0].content.parts[0].text;
                     
-                    // تحويل النتيجة إلى ملف قابل للتحميل أوتوماتيكياً
-                    let blob = new Blob([data.result], { type: 'text/plain;charset=utf-8' });
+                    document.getElementById('resultArea').classList.remove('hidden');
+                    document.getElementById('outputContent').innerText = resultText;
+                    
+                    let blob = new Blob([resultText], { type: 'text/plain;charset=utf-8' });
                     let url = URL.createObjectURL(blob);
                     let downloadBtn = document.getElementById('downloadBtn');
                     downloadBtn.href = url;
                     downloadBtn.download = 'Digital_Product.txt';
                 } else {
-                    alert("حدث خطأ أثناء التوليد: " + (data.error || "يرجى المحاولة لاحقاً"));
+                    alert("حدث خطأ أثناء الاتصال بالذكاء الاصطناعي. تأكد من صحة مفتاح الـ API.");
                 }
             } catch (error) {
                 console.error(error);
-                alert("تعذر الاتصال بالخادم. تأكد من رفع المشروع على Vercel.");
+                alert("حدث خطأ في الشبكة. يرجى المحاولة لاحقاً.");
             } finally {
-                btn.innerText = "⚡ توليد المنتج أوتوماتيكياً (1 USDT)";
+                btn.innerText = "⚡ توليد المنتج أوتوماتيكياً";
                 btn.disabled = false;
             }
         }
