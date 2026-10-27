@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة توليد المنتجات الرقمية الذكية بالذكاء الاصطناعي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #0b0f19; color: #f8fafc; }
+        .gradient-text { background: linear-gradient(90deg, #38bdf8, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .gold-gradient { background: linear-gradient(135deg, #10b981, #059669); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- الهيدر -->
+    <header class="container mx-auto px-4 pt-10 pb-6 text-center">
+        <h1 class="text-3xl md:text-5xl font-black mb-3">
+            مصنع <span class="gradient-text">المنتجات الرقمية الذكية</span>
+        </h1>
+        <p class="text-slate-400 max-w-xl mx-auto text-sm md:text-base">
+            اكتب وصف طلبك (Prompt) وسيقوم الذكاء الاصطناعي بتوليده وتجهيزه لك أوتوماتيكياً فور إتمام الدفع.
+        </p>
+    </header>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="container mx-auto px-4 max-w-lg mb-16">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
+            
+            <!-- نوع المنتج -->
+            <label class="block text-slate-400 text-xs font-bold mb-2">1. اختر نوع المنتج الرقمي:</label>
+            <select id="productType" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white mb-4 focus:outline-none focus:border-emerald-500 text-sm">
+                <option value="e-book">📚 كتاب إلكتروني مصغر (PDF / دليل)</option>
+                <option value="logo">🎨 تصميم شعار وتصاميم إبداعية</option>
+                <option value="ad-copy">📢 إعلان تسويقي / سيناريو تيك توك</option>
+            </select>
+
+            <!-- صندوق الـ Prompt -->
+            <label class="block text-slate-400 text-xs font-bold mb-2">2. اكتب وصف طلبك (Prompt):</label>
+            <textarea id="userPrompt" rows="3" placeholder="مثال: اكتب لي دليلاً احترافياً عن كيفية البدء في التجارة الرقمية..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white mb-4 text-sm focus:outline-none focus:border-emerald-500"></textarea>
+
+            <!-- السعر -->
+            <div class="bg-slate-950 rounded-2xl p-4 border border-slate-800 mb-6 flex justify-between items-center">
+                <span class="text-xs text-slate-400">تكلفة التوليد الفوري:</span>
+                <span class="text-2xl font-black text-emerald-400">1.00 USDT</span>
+            </div>
+
+            <!-- زر التوليد والدفع -->
+            <button onclick="generateProduct()" class="w-full gold-gradient text-slate-950 font-black py-3.5 rounded-xl text-base hover:opacity-90 transition shadow-lg">
+                ⚡ توليد المنتج أوتوماتيكياً (1 USDT)
+            </button>
+
+            <!-- منطقة النتيجة أو التحميل -->
+            <div id="resultArea" class="mt-6 hidden bg-slate-950 p-4 rounded-xl border border-emerald-500/40 text-center">
+                <p class="text-xs text-emerald-400 font-bold mb-2">تم توليد منتجك بنجاح! 🎉</p>
+                <div id="outputContent" class="text-xs text-slate-300 max-h-40 overflow-y-auto mb-3 text-right bg-slate-900 p-3 rounded-lg"></div>
+                <a id="downloadBtn" href="#" class="inline-block bg-emerald-500 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs">تحميل الملف (PDF / نص)</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- الفوتر -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 text-center text-slate-500 text-xs">
+        <p>جميع الحقوق محفوظة © منصة التوليد الرقمي الذكي بالـ AI</p>
+    </footer>
+
+    <script>
+        const MY_WALLET = "TYnJW395RFhCnpowLBtEiHWys88tg5FeiU";
+
+        async function generateProduct() {
+            const type = document.getElementById('productType').value;
+            const promptText = document.getElementById('userPrompt').value;
+
+            if(!promptText.trim()) {
+                alert("الرجاء كتابة وصف المنتج (Prompt) أولاً!");
+                return;
+            }
+
+            // مؤشر التحميل
+            const btn = document.querySelector('button');
+            btn.innerText = "جاري التوليد بواسطة الذكاء الاصطناعي... ⏳";
+            btn.disabled = true;
+
+            try {
+                // إرسال الطلب إلى مسار الـ Serverless Function على Vercel (الذي سيحتوي على مفتاح OpenAI API بأمان)
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, prompt: promptText })
+                });
+
+                const data = await response.json();
+
+                if(response.ok) {
+                    document.getElementById('resultArea').classList.remove('hidden');
+                    document.getElementById('outputContent').innerText = data.result;
+                    
+                    // تحويل النتيجة إلى ملف قابل للتحميل أوتوماتيكياً
+                    let blob = new Blob([data.result], { type: 'text/plain;charset=utf-8' });
+                    let url = URL.createObjectURL(blob);
+                    let downloadBtn = document.getElementById('downloadBtn');
+                    downloadBtn.href = url;
+                    downloadBtn.download = 'Digital_Product.txt';
+                } else {
+                    alert("حدث خطأ أثناء التوليد: " + (data.error || "يرجى المحاولة لاحقاً"));
+                }
+            } catch (error) {
+                console.error(error);
+                alert("تعذر الاتصال بالخادم. تأكد من رفع المشروع على Vercel.");
+            } finally {
+                btn.innerText = "⚡ توليد المنتج أوتوماتيكياً (1 USDT)";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
