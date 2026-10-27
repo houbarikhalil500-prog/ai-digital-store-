@@ -107,7 +107,7 @@
                     downloadBtn.href = url;
                     downloadBtn.download = 'Digital_Product.txt';
                 } else {
-                    alert("حدث خطأ من جة خدمة الذكاء الاصطناعي. تأكد من أن مفتاح Gemini صحيح.");
+                    alert("حدث خطأ من جهة خدمة الذكاء الاصطناعي: " + (data.error?.message || "تأكد من المفتاح"));
                 }
             } catch (error) {
                 console.error(error);
